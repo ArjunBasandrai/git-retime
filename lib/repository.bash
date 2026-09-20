@@ -10,7 +10,7 @@ grt_resolve_full_branch_ref() {
 grt_collect_scope() {
     local refs_file=$1 universe_file=$2 targets_file=$3
     local -a refs=() tips=() rev_args=()
-    local ref oid branch
+    local ref oid branch revision resolved
 
     if (( GRT_ALL_LOCAL_BRANCHES || GRT_REPO_SCOPE )); then
         while IFS= read -r ref; do refs+=("$ref"); done < <(git for-each-ref --format='%(refname)' refs/heads | LC_ALL=C sort)
@@ -37,7 +37,20 @@ grt_collect_scope() {
 
     git rev-list --topo-order --reverse "${tips[@]}" >"$universe_file" || grt_die "$GRT_EXIT_OBJECT" 'cannot enumerate commits'
 
-    if [[ -n $GRT_RANGE ]]; then
+    if (( ${#GRT_COMMITS[@]} )); then
+        declare -A universe=() selected=()
+        while IFS= read -r oid; do universe[$oid]=1; done <"$universe_file"
+        for revision in "${GRT_COMMITS[@]}"; do
+            resolved=$(git rev-parse --verify --end-of-options "$revision^{commit}" 2>/dev/null) || grt_die "$GRT_EXIT_USAGE" "invalid commit revision: $revision"
+            [[ ${universe[$resolved]+set} ]] || grt_die "$GRT_EXIT_USAGE" "target commit is outside the selected ref scope: $resolved"
+            [[ ! ${selected[$resolved]+set} ]] || grt_die "$GRT_EXIT_USAGE" "--commit resolves to the same commit more than once: $resolved"
+            selected[$resolved]=1
+        done
+        : >"$targets_file"
+        while IFS= read -r oid; do
+            if [[ ${selected[$oid]+set} ]]; then printf '%s\n' "$oid" >>"$targets_file"; fi
+        done <"$universe_file"
+    elif [[ -n $GRT_RANGE ]]; then
         rev_args+=("$GRT_RANGE")
         if (( GRT_FIRST_PARENT )); then rev_args+=(--first-parent); fi
         git rev-list --topo-order --reverse "${rev_args[@]}" >"$targets_file" || grt_die "$GRT_EXIT_USAGE" "invalid revision range: $GRT_RANGE"

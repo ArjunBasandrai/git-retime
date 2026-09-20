@@ -110,6 +110,10 @@ Do not combine `--branch` with `--repo` or `--all-local-branches`.
 ### Commit options
 
 - `--last N` selects at most the newest `N` commits across the selected refs.
+- `--commit REVISION` selects one exact commit. A full object ID, an
+  unambiguous short object ID, a tag that points to a commit, or a revision
+  expression such as `HEAD~3` is valid. Repeat the option to select more
+  commits. The result must be inside the selected ref history.
 - `--range REVISION-RANGE` passes one revision expression to `git rev-list`.
   The result must be inside the selected ref history.
 - `--root` selects each root commit in the selected ref history.
@@ -117,14 +121,26 @@ Do not combine `--branch` with `--repo` or `--all-local-branches`.
   `--root` target selection.
 - With no commit option, the selected branch tips are the targets.
 
+Do not combine `--commit` with `--last`, `--range`, `--root`, or
+`--first-parent`. If two `--commit` values resolve to the same commit, the
+command stops with a usage error.
+
+`--commit` changes the timestamp of the selected commit only. Descendants must
+still get new object IDs because their parent object IDs change. Those
+descendants keep their existing timestamps unless another `--commit` option
+selects them.
+
 Examples:
 
 ```text
 git retime show --last 10
+git retime show --commit HEAD~3
 git retime show --range HEAD~5..HEAD
 git retime show --branch main --branch release --last 20
 git retime set --date 2026-09-19 --root
 git retime shift --by 2h --repo --range feature~3..feature
+git retime shift --by 2h --commit HEAD~3
+git retime set --date 2026-09-19T23 --commit a1b2c3d --commit release-candidate
 ```
 
 `audit` and `normalize` inspect the full history reachable from the selected
@@ -291,6 +307,7 @@ A partial date uses deterministic random selection.
 ```text
 git retime set --date 2026-09-19T22 --timezone -04:00 --last 3
 git retime set --date 2026-09-19T22:45:12-04:00 --last 1 --committer
+git retime set --date 2026-09-19T23 --commit a1b2c3d
 ```
 
 ### `shift`
@@ -305,6 +322,7 @@ backward. The command keeps each field's existing timezone offset.
 ```text
 git retime shift --by 2h --last 4
 git retime shift --by -1d30m --range HEAD~5..HEAD --author
+git retime shift --by 2h --commit HEAD~3
 ```
 
 ### `backdate`

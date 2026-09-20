@@ -6,6 +6,9 @@ Commands:
   show audit set shift backdate schedule normalize edit batch
   operations undo redo recover prune-backups apply-plan completion
 
+Exact selection:
+  --commit REVISION  Select one exact commit. Repeat this option as needed.
+
 Guide: https://github.com/ArjunBasandrai/git-retime/blob/main/docs/cli.md
 '@)
 }
@@ -13,7 +16,8 @@ Guide: https://github.com/ArjunBasandrai/git-retime/blob/main/docs/cli.md
 function New-DefaultOptions {
     @{
         Branches = [System.Collections.Generic.List[string]]::new()
-        AllLocalBranches=$false; RepoScope=$false; Last=0; Range=''; RootScope=$false; FirstParent=$false
+        Commits = [System.Collections.Generic.List[string]]::new()
+        AllLocalBranches=$false; RepoScope=$false; Last=0; LastSpecified=$false; Range=''; RootScope=$false; FirstParent=$false
         FieldMode='both'; Date=''; By=''; Before=''; Start=''; End=''; File=''; Timezone='Z'; Seed="auto-$([Guid]::NewGuid().ToString('N'))"
         MinimumGap=1L; Chronology='strict'; DryRun=$false; SavePlan=''; OlderThan=30; Positional=[System.Collections.Generic.List[string]]::new()
         AllowDirty=$false; AllowActiveOperation=$false; AllowShallow=$false; AllowReplaceRefs=$false
@@ -31,7 +35,7 @@ function ConvertTo-GitRetimeOptions {
             for($position=$index+1;$position-lt$Arguments.Count;$position++){$options.Positional.Add($Arguments[$position])}
             break
         }
-        $needsValue = $argument -in @('--branch','--last','--range','--date','--by','--before','--start','--end','--file','--timezone','--seed','--minimum-gap','--chronology','--save-plan','--older-than')
+        $needsValue = $argument -in @('--branch','--commit','--last','--range','--date','--by','--before','--start','--end','--file','--timezone','--seed','--minimum-gap','--chronology','--save-plan','--older-than')
         if ($needsValue) {
             $index++
             if ($index -ge $Arguments.Count) { Throw-GitRetimeError $script:ExitUsage "option requires a value: $argument" }
@@ -39,9 +43,10 @@ function ConvertTo-GitRetimeOptions {
         }
         switch -CaseSensitive ($argument) {
             '--branch' { $options.Branches.Add($value) }
+            '--commit' { $options.Commits.Add($value) }
             '--all-local-branches' { $options.AllLocalBranches=$true }
             '--repo' { $options.RepoScope=$true }
-            '--last' { if($value -notmatch '^\d+$'){Throw-GitRetimeError $script:ExitUsage "--last must be a nonnegative integer: $value"}; $options.Last=[int]$value }
+            '--last' { if($value -notmatch '^\d+$'){Throw-GitRetimeError $script:ExitUsage "--last must be a nonnegative integer: $value"}; $options.Last=[int]$value; $options.LastSpecified=$true }
             '--range' { $options.Range=$value }
             '--root' { $options.RootScope=$true }
             '--first-parent' { $options.FirstParent=$true }
@@ -81,6 +86,8 @@ function ConvertTo-GitRetimeOptions {
     }
     if ($options.AllLocalBranches -and $options.Branches.Count) { Throw-GitRetimeError $script:ExitUsage '--all-local-branches and --branch cannot be used together' }
     if ($options.RepoScope -and $options.Branches.Count) { Throw-GitRetimeError $script:ExitUsage '--repo and --branch cannot be used together' }
+    if ($options.Commits.Count -and ($options.LastSpecified -or $options.Range -or $options.RootScope)) { Throw-GitRetimeError $script:ExitUsage '--commit cannot be used with --last, --range, or --root' }
+    if ($options.Commits.Count -and $options.FirstParent) { Throw-GitRetimeError $script:ExitUsage '--commit cannot be used with --first-parent' }
     if($options.Seed.IndexOfAny([char[]]@("`t","`r","`n"))-ge0){Throw-GitRetimeError $script:ExitUsage '--seed cannot contain a tab or line break'}
     $options
 }

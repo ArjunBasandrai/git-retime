@@ -60,7 +60,16 @@ operations undo redo recover prune-backups apply-plan completion
 ```
 
 Common scope options include `--branch`, `--last`, `--range`, `--root`,
-`--first-parent`, `--repo`, and `--all-local-branches`.
+`--commit`, `--first-parent`, `--repo`, and `--all-local-branches`.
+
+Use `--commit REVISION` to select one exact commit. A full object ID, a short
+object ID, a tag, or a revision such as `HEAD~3` is valid. Repeat the option to
+select more commits:
+
+```text
+git retime shift --by 2h --commit HEAD~3
+git retime set --date 2026-09-19T23 --commit a1b2c3d --commit release-candidate
+```
 
 ## Requirements
 

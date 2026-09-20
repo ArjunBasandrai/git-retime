@@ -8,13 +8,16 @@ Commands:
   show audit set shift backdate schedule normalize edit batch
   operations undo redo recover prune-backups apply-plan completion
 
+Exact selection:
+  --commit REVISION  Select one exact commit. Repeat this option as needed.
+
 Guide: https://github.com/ArjunBasandrai/git-retime/blob/main/docs/cli.md
 EOF
 }
 
 grt_initialize_options() {
-    GRT_BRANCHES=()
-    GRT_ALL_LOCAL_BRANCHES=0 GRT_REPO_SCOPE=0 GRT_LAST=0 GRT_RANGE='' GRT_ROOT_SCOPE=0 GRT_FIRST_PARENT=0
+    GRT_BRANCHES=() GRT_COMMITS=()
+    GRT_ALL_LOCAL_BRANCHES=0 GRT_REPO_SCOPE=0 GRT_LAST=0 GRT_LAST_SPECIFIED=0 GRT_RANGE='' GRT_ROOT_SCOPE=0 GRT_FIRST_PARENT=0
     GRT_FIELD_MODE=both GRT_DATE='' GRT_BY='' GRT_BEFORE='' GRT_START='' GRT_END='' GRT_FILE=''
     GRT_TIMEZONE=Z GRT_SEED="auto-$$-$RANDOM-$(date -u +%s%N)" GRT_MINIMUM_GAP=1 GRT_CHRONOLOGY=strict
     GRT_DRY_RUN=0 GRT_SAVE_PLAN='' GRT_OLDER_THAN=30 GRT_POSITIONAL=()
@@ -32,9 +35,10 @@ grt_parse_options() {
     while (( $# )); do
         case "$1" in
             --branch) grt_need_option_value "$1" "$#"; GRT_BRANCHES+=("$2"); shift 2 ;;
+            --commit) grt_need_option_value "$1" "$#"; GRT_COMMITS+=("$2"); shift 2 ;;
             --all-local-branches) GRT_ALL_LOCAL_BRANCHES=1; shift ;;
             --repo) GRT_REPO_SCOPE=1; shift ;;
-            --last) grt_need_option_value "$1" "$#"; GRT_LAST=$2; shift 2 ;;
+            --last) grt_need_option_value "$1" "$#"; GRT_LAST=$2; GRT_LAST_SPECIFIED=1; shift 2 ;;
             --range) grt_need_option_value "$1" "$#"; GRT_RANGE=$2; shift 2 ;;
             --root) GRT_ROOT_SCOPE=1; shift ;;
             --first-parent) GRT_FIRST_PARENT=1; shift ;;
@@ -77,6 +81,10 @@ grt_parse_options() {
     [[ $GRT_SEED != *$'\t'* && $GRT_SEED != *$'\n'* && $GRT_SEED != *$'\r'* ]] || grt_die "$GRT_EXIT_USAGE" '--seed cannot contain a tab or line break'
     (( !(GRT_ALL_LOCAL_BRANCHES && ${#GRT_BRANCHES[@]} > 0) )) || grt_die "$GRT_EXIT_USAGE" '--all-local-branches and --branch cannot be used together'
     (( !(GRT_REPO_SCOPE && ${#GRT_BRANCHES[@]} > 0) )) || grt_die "$GRT_EXIT_USAGE" '--repo and --branch cannot be used together'
+    if (( ${#GRT_COMMITS[@]} )); then
+        (( ! GRT_LAST_SPECIFIED && GRT_ROOT_SCOPE == 0 )) && [[ -z $GRT_RANGE ]] || grt_die "$GRT_EXIT_USAGE" '--commit cannot be used with --last, --range, or --root'
+        (( ! GRT_FIRST_PARENT )) || grt_die "$GRT_EXIT_USAGE" '--commit cannot be used with --first-parent'
+    fi
 }
 
 grt_plan_target_record() {

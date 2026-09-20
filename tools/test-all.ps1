@@ -61,13 +61,13 @@ $report=@"
 
 ## Test counts
 
-- Windows integration groups: 11
-- UNIX integration groups: 11
-- Cross-platform parity cases: 6
+- Windows integration groups: 12
+- UNIX integration groups: 12
+- Cross-platform parity cases: 7
 - Package verification groups: 3
 - Windows stress groups: $(if($SkipStress){0}else{1})
 - UNIX stress groups: $(if($SkipStress){0}else{4})
-- Total test groups: $(if($SkipStress){31}else{36})
+- Total test groups: $(if($SkipStress){34}else{39})
 
 ## Largest repositories tested
 
@@ -78,7 +78,7 @@ $report=@"
 
 ## Parity results
 
-All six parity cases produced byte-identical plans. Windows and UNIX produced identical resolved timestamps and rewritten object IDs for SHA-1 and SHA-256.
+All seven parity cases produced byte-identical plans. Windows and UNIX produced identical resolved timestamps and rewritten object IDs for SHA-1 and SHA-256.
 
 ## Step durations
 

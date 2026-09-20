@@ -45,6 +45,7 @@ make_linear() {
 test_version_and_help() {
     [[ $($retime --version) == 'git-retime 0.1.0' ]] || fail version
     $retime -h | grep -q 'usage: git retime'
+    $retime -h | grep -q -- '--commit REVISION'
     pass 'version and help'
 }
 
@@ -117,6 +118,32 @@ test_merge_and_branch_scope() {
     assert_equal "$head_dates" "$(git -C "$repo" show -s --format='%at %ct' main)" 'closure-only timestamp preservation'
     [[ $(git -C "$repo" show -s --format=%P main | wc -w) -eq 2 ]] || fail 'merge parents'
     pass 'branch scope and merge closure'
+}
+
+test_exact_commit_selection() {
+    local repo="$test_root/exact-commit" full short tagged plan targets outside before_target before_head
+    make_linear "$repo" 5
+    full=$(git -C "$repo" rev-parse HEAD~3); short=${full:0:8}
+    tagged=$(git -C "$repo" rev-parse HEAD~2); git -C "$repo" tag selected HEAD~2
+    plan="$test_root/exact-commit.plan"
+    (cd "$repo" && "$retime" shift --by 1h --commit "$short" --commit selected --dry-run --save-plan "$plan") >/dev/null
+    targets=$(grep -c $'^target\t' "$plan")
+    assert_equal 2 "$targets" 'exact commit target count'
+    grep -q $'^target\t'"$full"$'\t' "$plan" || fail 'short commit resolution'
+    grep -q $'^target\t'"$tagged"$'\t' "$plan" || fail 'tag commit resolution'
+    run_expect 2 bash -c "cd '$repo' && '$retime' shift --by 1h --commit '$full' --commit '$short'"
+    run_expect 2 bash -c "cd '$repo' && '$retime' shift --by 1h --commit missing-revision"
+    run_expect 2 bash -c "cd '$repo' && '$retime' shift --by 1h --commit HEAD --last 1"
+    git -C "$repo" switch -q --orphan outside
+    printf 'outside\n' >"$repo/outside.txt"; git -C "$repo" add outside.txt; git -C "$repo" commit -q -m outside
+    outside=$(git -C "$repo" rev-parse HEAD); git -C "$repo" switch -q main
+    run_expect 2 bash -c "cd '$repo' && '$retime' shift --by 1h --commit '$outside'"
+    git -C "$repo" tag -d selected >/dev/null
+    before_target=$(git -C "$repo" show -s --format=%at HEAD~3); before_head=$(git -C "$repo" show -s --format='%at %ct' HEAD)
+    (cd "$repo" && "$retime" shift --by 2h --commit HEAD~3 --chronology off) >/dev/null
+    assert_equal "$((before_target + 7200))" "$(git -C "$repo" show -s --format=%at HEAD~3)" 'exact commit timestamp'
+    assert_equal "$before_head" "$(git -C "$repo" show -s --format='%at %ct' HEAD)" 'exact commit descendant timestamps'
+    pass 'exact commit selection and descendant closure'
 }
 
 test_byte_preservation() {
@@ -246,6 +273,7 @@ test_linear_and_transactions
 test_field_modes_and_operations
 test_normalize_and_audit
 test_merge_and_branch_scope
+test_exact_commit_selection
 test_byte_preservation
 test_safety_and_concurrency
 test_recovery

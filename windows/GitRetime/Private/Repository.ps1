@@ -31,7 +31,18 @@ function Get-GitScopeData {
     }
     $tips = @($refs | ForEach-Object Oid)
     $universe = @(Get-GitLines (@('rev-list', '--topo-order', '--reverse') + $tips))
-    if ($Options.Range) {
+    $universeSet = [System.Collections.Generic.HashSet[string]]::new([string[]]$universe, [StringComparer]::Ordinal)
+    if ($Options.Commits.Count) {
+        $selected = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+        foreach ($revision in $Options.Commits) {
+            $result = Invoke-GitText -ArgumentList @('rev-parse', '--verify', '--end-of-options', "$revision^{commit}") -AllowFailure
+            if ($result.ExitCode -ne 0) { Throw-GitRetimeError $script:ExitUsage "invalid commit revision: $revision" }
+            $oid = $result.Output.Trim()
+            if (-not $universeSet.Contains($oid)) { Throw-GitRetimeError $script:ExitUsage "target commit is outside the selected ref scope: $oid" }
+            if (-not $selected.Add($oid)) { Throw-GitRetimeError $script:ExitUsage "--commit resolves to the same commit more than once: $oid" }
+        }
+        $targets = @($universe | Where-Object { $selected.Contains($_) })
+    } elseif ($Options.Range) {
         $arguments = @('rev-list', '--topo-order', '--reverse')
         if ($Options.FirstParent) { $arguments += '--first-parent' }
         $arguments += $Options.Range
@@ -48,7 +59,6 @@ function Get-GitScopeData {
         $targets = @($tips | Sort-Object -Unique -CaseSensitive)
     }
     if (-not $targets.Count) { Throw-GitRetimeError $script:ExitUsage 'the target selection is empty' }
-    $universeSet = [System.Collections.Generic.HashSet[string]]::new([string[]]$universe, [StringComparer]::Ordinal)
     foreach ($target in $targets) {
         if (-not $universeSet.Contains($target)) { Throw-GitRetimeError $script:ExitUsage "target commit is outside the selected ref scope: $target" }
     }

@@ -63,6 +63,7 @@ try {
     $help = Invoke-Retime $projectRoot @()
     Assert-Equal 0 $help.ExitCode 'help exit'
     if ($help.Output -notmatch 'usage: git retime') { throw 'help text' }
+    if ($help.Output -notmatch '--commit REVISION') { throw 'exact commit help text' }
     Complete-Test 'version and help'
 
     $repo = New-TestRepository linear 4
@@ -112,6 +113,29 @@ try {
     Assert-RetimeSuccess $repo @('shift','--by','1d','--branch','main','--root','--chronology','off')|Out-Null
     Assert-NotEqual $mainBefore (Invoke-Git $repo @('rev-parse','main')) 'merge closure';Assert-Equal $topicBefore (Invoke-Git $repo @('rev-parse','topic')) 'branch isolation';Assert-Equal $headDates (Invoke-Git $repo @('show','-s','--format=%at %ct','main')) 'closure-only timestamp preservation'
     Complete-Test 'branch scope and merge closure'
+
+    $repo = New-TestRepository exact-commit 5
+    $full = Invoke-Git $repo @('rev-parse','HEAD~3'); $short = $full.Substring(0,8)
+    $tagged = Invoke-Git $repo @('rev-parse','HEAD~2'); Invoke-Git $repo @('tag','selected','HEAD~2') | Out-Null
+    $plan = Join-Path $testRoot 'exact-commit.plan'
+    Assert-RetimeSuccess $repo @('shift','--by','1h','--commit',$short,'--commit','selected','--dry-run','--save-plan',$plan) | Out-Null
+    $targetLines = @(Get-Content -LiteralPath $plan | Where-Object { $_.StartsWith("target`t") })
+    Assert-Equal 2 $targetLines.Count 'exact commit target count'
+    if (-not ($targetLines | Where-Object { $_ -like "target`t$full`t*" })) { throw 'short commit resolution' }
+    if (-not ($targetLines | Where-Object { $_ -like "target`t$tagged`t*" })) { throw 'tag commit resolution' }
+    Assert-Equal 2 (Invoke-Retime $repo @('shift','--by','1h','--commit',$full,'--commit',$short)).ExitCode 'duplicate commit selection'
+    Assert-Equal 2 (Invoke-Retime $repo @('shift','--by','1h','--commit','missing-revision')).ExitCode 'invalid commit selection'
+    Assert-Equal 2 (Invoke-Retime $repo @('shift','--by','1h','--commit','HEAD','--last','1')).ExitCode 'conflicting commit selection'
+    Invoke-Git $repo @('switch','-q','--orphan','outside') | Out-Null
+    [IO.File]::WriteAllText((Join-Path $repo 'outside.txt'),"outside`n"); Invoke-Git $repo @('add','outside.txt') | Out-Null; Invoke-Git $repo @('commit','-q','-m','outside') | Out-Null
+    $outside = Invoke-Git $repo @('rev-parse','HEAD'); Invoke-Git $repo @('switch','-q','main') | Out-Null
+    Assert-Equal 2 (Invoke-Retime $repo @('shift','--by','1h','--commit',$outside)).ExitCode 'out-of-scope commit selection'
+    Invoke-Git $repo @('tag','-d','selected') | Out-Null
+    $beforeTarget = [long](Invoke-Git $repo @('show','-s','--format=%at','HEAD~3')); $beforeHead = Invoke-Git $repo @('show','-s','--format=%at %ct','HEAD')
+    Assert-RetimeSuccess $repo @('shift','--by','2h','--commit','HEAD~3','--chronology','off') | Out-Null
+    Assert-Equal ($beforeTarget + 7200) ([long](Invoke-Git $repo @('show','-s','--format=%at','HEAD~3'))) 'exact commit timestamp'
+    Assert-Equal $beforeHead (Invoke-Git $repo @('show','-s','--format=%at %ct','HEAD')) 'exact commit descendant timestamps'
+    Complete-Test 'exact commit selection and descendant closure'
 
     $repo = New-TestRepository bytes 1
     $tree=Invoke-Git $repo @('show','-s','--format=%T','HEAD');$parent=Invoke-Git $repo @('rev-parse','HEAD')

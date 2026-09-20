@@ -35,6 +35,7 @@ try{
     $linuxProjectRoot=ConvertTo-WslPath $projectRoot
     $cases=@(
         [pscustomobject]@{Name='partial-set';Args=@('set','--date','2026-09','--last','5','--seed','parity-a')},
+        [pscustomobject]@{Name='exact-commit';Args=@('shift','--by','45m','--commit','HEAD~7','--commit','HEAD~3','--chronology','off','--seed','parity-commit')},
         [pscustomobject]@{Name='root-closure';Args=@('shift','--by','2h30m','--root','--chronology','off','--seed','parity-b')},
         [pscustomobject]@{Name='schedule';Args=@('schedule','--start','2027-01-01','--end','2027-02-01','--last','6','--seed','parity-c')},
         [pscustomobject]@{Name='author-only';Args=@('set','--date','2028-03-04T05:06','--timezone','+05:30','--author','--chronology','off','--seed','parity-d')},
