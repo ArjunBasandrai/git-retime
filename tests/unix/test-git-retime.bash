@@ -44,7 +44,7 @@ make_linear() {
 
 test_version_and_help() {
     [[ $($retime --version) == 'git-retime 0.1.0' ]] || fail version
-    $retime --help | grep -q 'usage: git retime'
+    $retime -h | grep -q 'usage: git retime'
     pass 'version and help'
 }
 

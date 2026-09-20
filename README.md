@@ -99,8 +99,11 @@ Make sure that `$HOME/.local/bin` is on `PATH`.
 
 ```text
 git retime --version
-git retime
+git retime -h
 ```
+
+Use `-h` for the command summary. Git reserves `git retime --help` for an
+installed manual page. See [docs/cli.md](docs/cli.md) for command options.
 
 Use `sha256sum -c SHA256SUMS` on Linux to verify the downloaded archives.
 On Windows, compare the output from `Get-FileHash -Algorithm SHA256` with
@@ -112,8 +115,8 @@ uninstall instructions.
 ## Development entry points
 
 ```text
-Windows: pwsh -NoProfile -File ./windows/git-retime.ps1 --help
-UNIX:    ./bin/git-retime --help
+Windows: pwsh -NoProfile -File ./windows/git-retime.ps1 -h
+UNIX:    ./bin/git-retime -h
 ```
 
 All tests create disposable repositories. The test runner does not modify the

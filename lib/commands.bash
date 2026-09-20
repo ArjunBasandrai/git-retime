@@ -8,7 +8,7 @@ Commands:
   show audit set shift backdate schedule normalize edit batch
   operations undo redo recover prune-backups apply-plan completion
 
-Run "git retime <command> --help" or read docs/cli.md for the command contract.
+Guide: https://github.com/ArjunBasandrai/git-retime/blob/main/docs/cli.md
 EOF
 }
 

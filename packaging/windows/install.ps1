@@ -13,5 +13,8 @@ Copy-Item -LiteralPath (Join-Path $source 'git-retime.ps1') -Destination $Destin
 $moduleDestination = Join-Path $Destination 'GitRetime'
 if (Test-Path -LiteralPath $moduleDestination) { Remove-Item -LiteralPath $moduleDestination -Recurse -Force }
 Copy-Item -LiteralPath (Join-Path $source 'GitRetime') -Destination $Destination -Recurse
+$docsDestination = Join-Path $Destination 'docs'
+if (Test-Path -LiteralPath $docsDestination) { Remove-Item -LiteralPath $docsDestination -Recurse -Force }
+Copy-Item -LiteralPath (Join-Path $source 'docs') -Destination $Destination -Recurse
 [Console]::Out.WriteLine("Installed git-retime in $Destination")
 [Console]::Out.WriteLine('Add this directory to PATH to use "git retime" from all repositories.')

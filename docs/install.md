@@ -38,6 +38,20 @@ Make sure `$HOME/.local/bin` is on `PATH`. To uninstall:
 ./uninstall.sh --prefix "$HOME/.local"
 ```
 
+## Installation check
+
+```text
+git retime --version
+git retime -h
+```
+
+Use `-h` for the command summary. Git reserves `git retime --help` for an
+installed manual page. See [cli.md](cli.md) for command options.
+
+The Windows installer copies the guide to `docs\cli.md` below the installation
+directory. The UNIX installer copies it to
+`PREFIX/share/doc/git-retime/cli.md`.
+
 ## Archive verification
 
 Run this command in the release directory:

@@ -31,11 +31,13 @@ try{
     $windowsPath="$windowsInstall;$env:PATH"
     $version=Run git.exe @('retime','--version') '' @{PATH=$windowsPath}
     if($version.ExitCode -or $version.Output.Trim()-ne'git-retime 0.1.0'){throw 'installed Windows command failed'}
-    $help=Run git.exe @('retime') '' @{PATH=$windowsPath}
+    $help=Run git.exe @('retime','-h') '' @{PATH=$windowsPath}
     if($help.ExitCode -or $help.Output-notmatch'usage: git retime'){throw 'installed Windows help failed'}
+    $installedGuide=Join-Path $windowsInstall 'docs/cli.md'
+    if(-not(Test-Path -LiteralPath $installedGuide)-or -not((Get-Content -Raw -LiteralPath $installedGuide).Contains('### `batch`'))){throw 'installed Windows CLI guide failed'}
     $repo=Join-Path $testRoot windows-repo;&git.exe init -q -b main $repo;&git.exe -C $repo config user.name Test;&git.exe -C $repo config user.email test@example.com;[IO.File]::WriteAllText((Join-Path $repo 'data'),"data`n");&git.exe -C $repo add data;&git.exe -C $repo commit -q -m data
     $result=Run git.exe @('retime','shift','--by','1h','--chronology','off') $repo @{PATH=$windowsPath};if($result.ExitCode){throw $result.Error}
-    $result=Run (Get-Process -Id $PID).Path @('-NoProfile','-File',(Join-Path $windowsSource 'uninstall.ps1'),'-Destination',$windowsInstall,'-Confirm:$false');if($result.ExitCode){throw $result.Error};foreach($name in @('git-retime','git-retime.cmd','git-retime.ps1','GitRetime')){if(Test-Path -LiteralPath (Join-Path $windowsInstall $name)){throw "Windows uninstall left $name"}}
+    $result=Run (Get-Process -Id $PID).Path @('-NoProfile','-File',(Join-Path $windowsSource 'uninstall.ps1'),'-Destination',$windowsInstall,'-Confirm:$false');if($result.ExitCode){throw $result.Error};foreach($name in @('git-retime','git-retime.cmd','git-retime.ps1','GitRetime','docs')){if(Test-Path -LiteralPath (Join-Path $windowsInstall $name)){throw "Windows uninstall left $name"}}
     [Console]::Out.WriteLine('ok 2 - Windows archive clean install, operation, and uninstall')
 
     $linuxArchive="/mnt/$($unixArchive.Substring(0,1).ToLowerInvariant())/$($unixArchive.Substring(3).Replace('\','/'))";$token=[Guid]::NewGuid().ToString('N');$linuxRoot="/tmp/git-retime-package-$token";$linuxPrefix="$linuxRoot/prefix"

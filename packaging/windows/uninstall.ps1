@@ -7,7 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $resolved = [IO.Path]::GetFullPath($Destination)
 if ($PSCmdlet.ShouldProcess($resolved, 'Remove the git-retime installation')) {
-    foreach ($name in @('git-retime', 'git-retime.cmd', 'git-retime.ps1', 'GitRetime')) {
+    foreach ($name in @('git-retime', 'git-retime.cmd', 'git-retime.ps1', 'GitRetime', 'docs')) {
         $target = Join-Path $resolved $name
         if (Test-Path -LiteralPath $target) { Remove-Item -LiteralPath $target -Recurse -Force }
     }
