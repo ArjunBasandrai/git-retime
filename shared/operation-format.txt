@@ -1,0 +1,8 @@
+git-retime-operation<TAB>1
+id<TAB>UTC-STAMP-RANDOM-SUFFIX
+state<TAB>prepared|committed|undone|rolled-back|pruned
+created<TAB>UNIX-SECONDS
+object-format<TAB>sha1|sha256
+repository-id<TAB>SHA256
+plan-sha256<TAB>SHA256
+ref<TAB>FULL-REF-NAME<TAB>OLD-OID<TAB>NEW-OID<TAB>BACKUP-REF

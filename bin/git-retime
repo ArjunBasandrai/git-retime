@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if ((BASH_VERSINFO[0] < 5)); then
+    printf 'git-retime: Bash 5 or later is required\n' >&2
+    exit 8
+fi
+
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
+root_dir=$(cd -- "$script_dir/.." && pwd -P)
+
+if [[ -d "$root_dir/lib/git-retime" ]]; then
+    lib_dir="$root_dir/lib/git-retime"
+elif [[ -d "$root_dir/lib" ]]; then
+    lib_dir="$root_dir/lib"
+else
+    printf 'git-retime: cannot find private libraries\n' >&2
+    exit 8
+fi
+
+for library in common dates repository plan rewrite commands; do
+    # shellcheck source=/dev/null
+    source "$lib_dir/$library.bash"
+done
+
+git_retime_main "$@"

@@ -1,0 +1,9 @@
+git-retime-plan<TAB>1
+object-format<TAB>sha1|sha256
+operation<TAB>COMMAND
+seed<TAB>TEXT
+minimum-gap<TAB>NONNEGATIVE-INTEGER
+chronology<TAB>strict|off
+field-mode<TAB>author|committer|both
+target<TAB>OID<TAB>AUTHOR-LOW|-<TAB>AUTHOR-HIGH|-<TAB>AUTHOR-OFFSET|-<TAB>COMMITTER-LOW|-<TAB>COMMITTER-HIGH|-<TAB>COMMITTER-OFFSET|-
+ref<TAB>FULL-REF-NAME<TAB>EXPECTED-OLD-OID
