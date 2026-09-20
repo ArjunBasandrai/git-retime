@@ -99,7 +99,7 @@ Make sure that `$HOME/.local/bin` is on `PATH`.
 
 ```text
 git retime --version
-git retime --help
+git retime
 ```
 
 Use `sha256sum -c SHA256SUMS` on Linux to verify the downloaded archives.

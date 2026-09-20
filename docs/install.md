@@ -9,7 +9,8 @@ pwsh -NoProfile -File ./install.ps1
 ```
 
 The default destination is `%LOCALAPPDATA%\Programs\git-retime`. Add that
-directory to `PATH`. Git then finds `git-retime.cmd` when you run `git retime`.
+directory to `PATH`. Git then finds the extensionless `git-retime` launcher
+when you run `git retime`.
 
 To select another destination:
 

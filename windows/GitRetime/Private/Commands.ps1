@@ -203,7 +203,7 @@ function Invoke-GitRetime {
     [CmdletBinding()]
     param([string[]] $Arguments)
     Assert-GitVersion
-    if(-not $Arguments.Count -or $Arguments[0] -in @('--help','-h')){Show-GitRetimeUsage;return}
+    if(-not $Arguments -or $Arguments[0] -in @('--help','-h')){Show-GitRetimeUsage;return}
     if($Arguments[0] -eq '--version'){[Console]::Out.WriteLine('git-retime 0.1.0');return}
     $command=$Arguments[0]
     $options=ConvertTo-GitRetimeOptions @($Arguments | Select-Object -Skip 1)

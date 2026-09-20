@@ -8,8 +8,8 @@ $testRoot=Join-Path ([IO.Path]::GetTempPath()) ("git-retime-package-tests-{0}" -
 $dist=if($DistributionDirectory){[IO.Path]::GetFullPath($DistributionDirectory)}else{Join-Path $testRoot dist}
 [IO.Directory]::CreateDirectory($dist)|Out-Null
 
-function Run([string]$File,[string[]]$Arguments,[string]$WorkingDirectory=''){
-    $info=[Diagnostics.ProcessStartInfo]::new($File);$info.UseShellExecute=$false;$info.RedirectStandardOutput=$true;$info.RedirectStandardError=$true;if($WorkingDirectory){$info.WorkingDirectory=$WorkingDirectory};foreach($argument in $Arguments){[void]$info.ArgumentList.Add($argument)}
+function Run([string]$File,[string[]]$Arguments,[string]$WorkingDirectory='',[hashtable]$Environment=@{}){
+    $info=[Diagnostics.ProcessStartInfo]::new($File);$info.UseShellExecute=$false;$info.RedirectStandardOutput=$true;$info.RedirectStandardError=$true;if($WorkingDirectory){$info.WorkingDirectory=$WorkingDirectory};foreach($entry in $Environment.GetEnumerator()){$info.Environment[$entry.Key]=$entry.Value};foreach($argument in $Arguments){[void]$info.ArgumentList.Add($argument)}
     $process=[Diagnostics.Process]::Start($info);$outputTask=$process.StandardOutput.ReadToEndAsync();$errorTask=$process.StandardError.ReadToEndAsync();$process.WaitForExit();[pscustomobject]@{ExitCode=$process.ExitCode;Output=$outputTask.GetAwaiter().GetResult();Error=$errorTask.GetAwaiter().GetResult()}
 }
 
@@ -28,11 +28,14 @@ try{
     $windowsSource=Join-Path $windowsExtract 'git-retime-windows-0.1.0';$windowsInstall=Join-Path $testRoot windows-install
     $result=Run (Get-Process -Id $PID).Path @('-NoProfile','-File',(Join-Path $windowsSource 'install.ps1'),'-Destination',$windowsInstall)
     if($result.ExitCode){throw $result.Error}
-    $version=Run (Get-Process -Id $PID).Path @('-NoProfile','-File',(Join-Path $windowsInstall 'git-retime.ps1'),'--version')
+    $windowsPath="$windowsInstall;$env:PATH"
+    $version=Run git.exe @('retime','--version') '' @{PATH=$windowsPath}
     if($version.ExitCode -or $version.Output.Trim()-ne'git-retime 0.1.0'){throw 'installed Windows command failed'}
+    $help=Run git.exe @('retime') '' @{PATH=$windowsPath}
+    if($help.ExitCode -or $help.Output-notmatch'usage: git retime'){throw 'installed Windows help failed'}
     $repo=Join-Path $testRoot windows-repo;&git.exe init -q -b main $repo;&git.exe -C $repo config user.name Test;&git.exe -C $repo config user.email test@example.com;[IO.File]::WriteAllText((Join-Path $repo 'data'),"data`n");&git.exe -C $repo add data;&git.exe -C $repo commit -q -m data
-    $result=Run (Get-Process -Id $PID).Path @('-NoProfile','-File',(Join-Path $windowsInstall 'git-retime.ps1'),'shift','--by','1h','--chronology','off') $repo;if($result.ExitCode){throw $result.Error}
-    $result=Run (Get-Process -Id $PID).Path @('-NoProfile','-File',(Join-Path $windowsSource 'uninstall.ps1'),'-Destination',$windowsInstall,'-Confirm:$false');if($result.ExitCode){throw $result.Error};if(Test-Path -LiteralPath (Join-Path $windowsInstall 'git-retime.ps1')){throw 'Windows uninstall failed'}
+    $result=Run git.exe @('retime','shift','--by','1h','--chronology','off') $repo @{PATH=$windowsPath};if($result.ExitCode){throw $result.Error}
+    $result=Run (Get-Process -Id $PID).Path @('-NoProfile','-File',(Join-Path $windowsSource 'uninstall.ps1'),'-Destination',$windowsInstall,'-Confirm:$false');if($result.ExitCode){throw $result.Error};foreach($name in @('git-retime','git-retime.cmd','git-retime.ps1','GitRetime')){if(Test-Path -LiteralPath (Join-Path $windowsInstall $name)){throw "Windows uninstall left $name"}}
     [Console]::Out.WriteLine('ok 2 - Windows archive clean install, operation, and uninstall')
 
     $linuxArchive="/mnt/$($unixArchive.Substring(0,1).ToLowerInvariant())/$($unixArchive.Substring(3).Replace('\','/'))";$token=[Guid]::NewGuid().ToString('N');$linuxRoot="/tmp/git-retime-package-$token";$linuxPrefix="$linuxRoot/prefix"

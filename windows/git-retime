@@ -1,0 +1,3 @@
+#!/bin/sh
+script_dir=$(cd -- "$(dirname -- "$0")" && pwd -P)
+exec pwsh.exe -NoLogo -NoProfile -File "$script_dir/git-retime.ps1" "$@"

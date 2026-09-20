@@ -7,6 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $source = $PSScriptRoot
 [IO.Directory]::CreateDirectory($Destination) | Out-Null
+Copy-Item -LiteralPath (Join-Path $source 'git-retime') -Destination $Destination -Force
 Copy-Item -LiteralPath (Join-Path $source 'git-retime.cmd') -Destination $Destination -Force
 Copy-Item -LiteralPath (Join-Path $source 'git-retime.ps1') -Destination $Destination -Force
 $moduleDestination = Join-Path $Destination 'GitRetime'

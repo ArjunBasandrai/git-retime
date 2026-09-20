@@ -60,7 +60,10 @@ try {
     $version = Invoke-Retime $projectRoot @('--version')
     Assert-Equal 0 $version.ExitCode 'version exit'
     Assert-Equal 'git-retime 0.1.0' $version.Output.Trim() 'version text'
-    Complete-Test 'version'
+    $help = Invoke-Retime $projectRoot @()
+    Assert-Equal 0 $help.ExitCode 'help exit'
+    if ($help.Output -notmatch 'usage: git retime') { throw 'help text' }
+    Complete-Test 'version and help'
 
     $repo = New-TestRepository linear 4
     $old = Invoke-Git $repo @('rev-parse','HEAD')

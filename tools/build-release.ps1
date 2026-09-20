@@ -17,7 +17,7 @@ try {
     $windowsName = "git-retime-windows-$Version"
     $windowsStage = Join-Path $stagingRoot $windowsName
     [IO.Directory]::CreateDirectory($windowsStage) | Out-Null
-    Copy-Item -LiteralPath (Join-Path $projectRoot 'windows/git-retime.cmd'),(Join-Path $projectRoot 'windows/git-retime.ps1'),(Join-Path $projectRoot 'README.md'),(Join-Path $projectRoot 'LICENSE') -Destination $windowsStage
+    Copy-Item -LiteralPath (Join-Path $projectRoot 'windows/git-retime'),(Join-Path $projectRoot 'windows/git-retime.cmd'),(Join-Path $projectRoot 'windows/git-retime.ps1'),(Join-Path $projectRoot 'README.md'),(Join-Path $projectRoot 'LICENSE') -Destination $windowsStage
     Copy-Item -LiteralPath (Join-Path $projectRoot 'windows/GitRetime') -Destination $windowsStage -Recurse
     Copy-Item -LiteralPath (Join-Path $projectRoot 'docs') -Destination $windowsStage -Recurse
     Copy-Item -LiteralPath (Join-Path $projectRoot 'packaging/windows/install.ps1'),(Join-Path $projectRoot 'packaging/windows/uninstall.ps1') -Destination $windowsStage
